@@ -120,12 +120,12 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 .item-name{font-size:1.05rem;font-weight:800;flex:1;color:var(--text)}
 .item-qty{font-family:'DM Mono',monospace;font-size:0.95rem;font-weight:700;color:#b91c1c;background:rgba(185,28,28,0.08);padding:5px 14px;border-radius:99px;flex-shrink:0;white-space:nowrap;border:1px dashed rgba(185,28,28,0.35);cursor:pointer;transition:all 0.2s}
 .item-qty:hover{background:rgba(185,28,28,0.16);border-color:#b91c1c}
-.item-meta{display:flex;flex-wrap:wrap;gap:6px;padding:0 18px 8px}
-.meta-tag{font-size:0.68rem;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:99px;padding:3px 10px}
+.item-meta{display:flex;flex-wrap:wrap;gap:8px;padding:2px 18px 12px}
+.meta-tag{font-size:0.85rem;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:99px;padding:6px 14px}
 .meta-tag b{color:var(--text);font-weight:700}
 .item-status{padding:0 18px 10px;min-height:22px}
-.status-ok{font-size:0.75rem;color:var(--ok);font-weight:700}
-.status-nook{font-size:0.75rem;color:var(--nook);font-weight:700}
+.status-ok{font-size:0.92rem;color:var(--ok);font-weight:700}
+.status-nook{font-size:0.92rem;color:var(--nook);font-weight:700}
 .item-btns{display:flex;border-top:2px solid var(--border2)}
 .btn-ok{flex:1;padding:15px;background:transparent;border:none;border-right:3px solid var(--border2);cursor:pointer;font-family:'Inter',sans-serif;font-weight:700;font-size:0.95rem;color:var(--muted);transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px}
 .btn-ok:hover,.btn-ok.active{background:var(--ok-bg);color:var(--ok)}
@@ -183,6 +183,11 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 .dash-badge.pend{background:var(--bg);color:var(--muted);border:1px solid var(--border)}
 .chart-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow)}
 .chart-title{font-size:0.82rem;font-weight:800;color:var(--text);margin-bottom:14px}
+.chart-legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;justify-content:center}
+.leg-item{font-size:0.7rem;color:var(--muted);display:flex;align-items:center;gap:5px}
+.leg-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.hist-bar{transition:y 0.9s cubic-bezier(.22,1,.36,1),height 0.9s cubic-bezier(.22,1,.36,1)}
+.hist-bar-val{transition:opacity 0.6s ease 0.5s}
 .chart-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .chart-row:last-child{margin-bottom:0}
 .chart-row-label{font-size:0.72rem;font-weight:600;color:var(--muted);width:88px;flex-shrink:0}
@@ -253,6 +258,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
   <div class="sidebar-actions">
     <button class="sb-btn" onclick="goHome(); closeMenu()"> Ver ambos turnos</button>
     <button class="sb-btn" onclick="goDashboard(); closeMenu()" style="color:var(--accent);font-weight:700;border-color:#bfdbfe;background:#eff6ff"> Dashboard general</button>
+    <button class="sb-btn" onclick="goHistorial(); closeMenu()" style="color:var(--accent);font-weight:700;border-color:#bfdbfe;background:#eff6ff"> Historial y comparaci&oacute;n</button>
   </div>
 </div>
 <div class="main" id="main"></div>
@@ -361,6 +367,7 @@ const TURNO_KEY='lozacheck_turno_v1';
 const BCOS_KEY='lozacheck_bcos_v1';
 const CUSTOM_KEY='lozacheck_custom_v1';
 const DELETED_KEY='lozacheck_deleted_v1';
+const HIST_KEY='lozacheck_historial_v1';
 var currentView='home';
 var qtyTarget=null;
 var dashFilter='all';
@@ -394,6 +401,8 @@ function loadCustom(){ try{ var v=localStorage.getItem(CUSTOM_KEY); if(v) return
 function saveCustom(){ try{ localStorage.setItem(CUSTOM_KEY,JSON.stringify(customItems)); }catch(e){} }
 function loadDeleted(){ try{ var v=localStorage.getItem(DELETED_KEY); if(v) return JSON.parse(v); }catch(e){} return {}; }
 function saveDeleted(){ try{ localStorage.setItem(DELETED_KEY,JSON.stringify(deletedItems)); }catch(e){} }
+function loadHistorial(){ try{ var v=localStorage.getItem(HIST_KEY); if(v) return JSON.parse(v); }catch(e){} return []; }
+function saveHistorial(){ try{ localStorage.setItem(HIST_KEY,JSON.stringify(historial)); }catch(e){} }
 
 var state=loadState();
 var horas=loadHoras();
@@ -403,6 +412,7 @@ var turnos=loadTurnos();
 var bcosMap=loadBcosMap();
 var customItems=loadCustom();
 var deletedItems=loadDeleted();
+var historial=loadHistorial();
 
 function getHora(aId,item){ return horas[aId+'_'+item.id] || item.hora; }
 function getName(aId,item){ return names[aId+'_'+item.id] || item.name; }
@@ -484,6 +494,7 @@ function closeMenu(){
 function goHome(){ currentView='home'; render(); }
 function goAirline(id){ currentView=id; render(); closeMenu(); }
 function goDashboard(){ currentView='dashboard'; dashFilter='all'; render(); closeMenu(); }
+function goHistorial(){ currentView='historial'; render(); closeMenu(); }
 
 function abrirItemModal(aId,itemId){
   var a=airlines.find(function(x){ return x.id===aId; });
@@ -574,20 +585,30 @@ function setStatus(aId,itemId,status){
     state[aId][itemId].completedAt='';
   }
   saveState(); render();
+  // Guardar cierre automatico cuando el turno de este item llega al 100%
+  var aTurno=airlines.find(function(x){ return x.id===aId; });
+  if(aTurno && airlineProgress(aTurno).pct===100){
+    guardarCierre();
+    showToast('Cierre de '+ (aTurno.turnoTag?('Turno '+aTurno.turnoTag):'turno') +' guardado en el historial',true);
+  }
   // Auto popup when all complete
   if(allComplete()){
+    guardarCierre();
     setTimeout(function(){ showCompleteModal(); }, 400);
   }
-  // Bounce effect
-  setTimeout(function(){
-    var btns = document.querySelectorAll('.btn-ok.active, .btn-nook.active');
-    btns.forEach(function(b){
-      b.classList.remove('bounce');
-      void b.offsetWidth;
-      b.classList.add('bounce');
-      setTimeout(function(){ b.classList.remove('bounce'); }, 350);
-    });
-  }, 20);
+  // Bounce effect SOLO en el boton que se toco
+  var estadoFinal=state[aId][itemId].status;
+  if(estadoFinal==='ok' || estadoFinal==='nook'){
+    setTimeout(function(){
+      var b=document.querySelector('[data-btn="'+aId+'_'+itemId+'_'+estadoFinal+'"]');
+      if(b){
+        b.classList.remove('bounce');
+        void b.offsetWidth;
+        b.classList.add('bounce');
+        setTimeout(function(){ b.classList.remove('bounce'); }, 350);
+      }
+    }, 20);
+  }
 }
 function saveObs(aId,itemId,val){
   if(!state[aId]) state[aId]={};
@@ -656,6 +677,30 @@ function exportarExcel(){
   showToast('Excel exportado correctamente',true);
 }
 
+function exportarHistorial(){
+  if(historial.length===0){ showToast('No hay historial para exportar',false); return; }
+  var wb=XLSX.utils.book_new();
+  var filas=[
+    ['LSG SKY CHEFS - HISTORIAL DE CIERRES - COPA AIRLINES'],
+    [''],
+    ['Fecha','Hora cierre',
+     'General %','General OK','General NO OK','General Pend','General Puntual %',
+     'T6 %','T6 OK','T6 NO OK','T6 Puntual %',
+     'T8 %','T8 OK','T8 NO OK','T8 Puntual %']
+  ];
+  historial.forEach(function(h){
+    filas.push([h.fechaLbl, h.hora,
+      h.global.pct, h.global.ok, h.global.nook, h.global.pend, h.global.puntPct,
+      h.t6.pct, h.t6.ok, h.t6.nook, h.t6.puntPct,
+      h.t8.pct, h.t8.ok, h.t8.nook, h.t8.puntPct]);
+  });
+  var ws=XLSX.utils.aoa_to_sheet(filas);
+  ws['!cols']=[{wch:12},{wch:11}].concat(Array(13).fill({wch:11}));
+  XLSX.utils.book_append_sheet(wb,ws,'Historial');
+  XLSX.writeFile(wb,'historial_copa.xlsx');
+  showToast('Historial exportado correctamente',true);
+}
+
 function renderSidebar(){
   var gp=globalProgress();
   document.getElementById('sgBar').style.width=gp.pct+'%';
@@ -713,8 +758,8 @@ function renderItem(a,item,idx){
     '</div>'+
     '<div class="item-status">'+statusHtml+'</div>'+
     '<div class="item-btns">'+
-      '<div class="btn-ok'+okActive+'" onclick="setStatus(\''+a.id+'\',\''+item.id+'\',\'ok\')">OK</div>'+
-      '<div class="btn-nook'+nookActive+'" onclick="setStatus(\''+a.id+'\',\''+item.id+'\',\'nook\')">NO OK</div>'+
+      '<div class="btn-ok'+okActive+'" data-btn="'+a.id+'_'+item.id+'_ok" onclick="setStatus(\''+a.id+'\',\''+item.id+'\',\'ok\')">OK</div>'+
+      '<div class="btn-nook'+nookActive+'" data-btn="'+a.id+'_'+item.id+'_nook" onclick="setStatus(\''+a.id+'\',\''+item.id+'\',\'nook\')">NO OK</div>'+
     '</div>'+
     '<div class="obs-area'+obsShow+'">'+
       '<div class="obs-label">Que falta o esta mal?</div>'+
@@ -767,6 +812,50 @@ function puntualidad(row){
   if(diff<=0) return diff<-5 ? 'temprano' : 'atiempo';
   if(diff<=10) return 'atiempo';
   return 'tarde';
+}
+
+// Calcula un resumen (snapshot) del estado actual, opcionalmente filtrado por turno ('T6','T8' o null=todos)
+function calcularResumen(turnoTag){
+  var rows=allItemsFlat().filter(function(r){ return !turnoTag || r.item.turno===turnoTag; });
+  var total=rows.length;
+  var ok=rows.filter(function(r){return r.status==='ok';}).length;
+  var nook=rows.filter(function(r){return r.status==='nook';}).length;
+  var pend=rows.filter(function(r){return r.status==='none';}).length;
+  var atiempo=0, tarde=0, temprano=0;
+  rows.forEach(function(r){
+    var p=puntualidad(r);
+    if(p==='atiempo') atiempo++;
+    else if(p==='tarde') tarde++;
+    else if(p==='temprano') temprano++;
+  });
+  var evaluados=atiempo+tarde+temprano;
+  return {
+    total:total, ok:ok, nook:nook, pend:pend,
+    pct: total>0?Math.round((ok/total)*100):0,
+    atiempo:atiempo, tarde:tarde, temprano:temprano, evaluados:evaluados,
+    puntPct: evaluados>0?Math.round((atiempo+temprano)/evaluados*100):0
+  };
+}
+
+// Guarda un cierre en el historial (uno por fecha). Reemplaza si ya existe la misma fecha.
+function guardarCierre(){
+  var hoy=new Date();
+  var fechaISO=hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0')+'-'+String(hoy.getDate()).padStart(2,'0');
+  var fechaLbl=hoy.toLocaleDateString('es-PA');
+  var registro={
+    fecha:fechaISO,
+    fechaLbl:fechaLbl,
+    hora:hoy.toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'}),
+    global:calcularResumen(null),
+    t6:calcularResumen('T6'),
+    t8:calcularResumen('T8')
+  };
+  // Reemplazar si ya hay un cierre de la misma fecha, si no, agregar
+  var idx=historial.findIndex(function(h){ return h.fecha===fechaISO; });
+  if(idx>=0) historial[idx]=registro; else historial.push(registro);
+  // Mantener orden por fecha ascendente
+  historial.sort(function(a,b){ return a.fecha<b.fecha?-1:a.fecha>b.fecha?1:0; });
+  saveHistorial();
 }
 
 function renderDashboard(main){
@@ -925,6 +1014,7 @@ function renderDashboard(main){
   html+='</tbody></table></div>';
 
   html+='<button class="export-btn show" style="margin-top:16px" onclick="exportarExcel()"> Exportar Dashboard a Excel</button>';
+  html+='<button class="back-btn" style="color:var(--accent);border-color:#bfdbfe;background:#eff6ff;font-weight:700" onclick="goHistorial()"> Ver historial y comparar dias</button>';
   html+='<button class="back-btn" onclick="goHome()">&larr; Volver a los turnos</button>';
 
   main.innerHTML=html;
@@ -938,6 +1028,232 @@ function renderDashboard(main){
   raf(function(){ setTimeout(animarBarras, 60); });
 }
 
+// ===== GRAFICO SVG DE LINEAS (ejes X/Y) =====
+// series: [{label, color, points:[{x,y}]}], xlabels: array de etiquetas eje X, ymax opcional
+function svgLineChart(series, xlabels, opts){
+  opts=opts||{};
+  var W=opts.w||640, H=opts.h||260;
+  var padL=42, padR=16, padT=18, padB=42;
+  var plotW=W-padL-padR, plotH=H-padT-padB;
+  var ymax=opts.ymax;
+  if(!ymax){
+    ymax=0;
+    series.forEach(function(s){ s.points.forEach(function(p){ if(p.y>ymax) ymax=p.y; }); });
+    ymax=Math.max(ymax, opts.minYmax||10);
+    ymax=Math.ceil(ymax/ (opts.step||10))*(opts.step||10);
+  }
+  var n=xlabels.length;
+  function px(i){ return n<=1 ? padL+plotW/2 : padL + (plotW*i/(n-1)); }
+  function py(v){ return padT + plotH - (plotH*v/ymax); }
+
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">';
+  // Rejilla horizontal + etiquetas eje Y
+  var lines=opts.ylines||4;
+  for(var g=0; g<=lines; g++){
+    var val=Math.round(ymax*g/lines);
+    var y=py(val);
+    svg+='<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="#e2e6ed" stroke-width="1"/>';
+    svg+='<text x="'+(padL-6)+'" y="'+(y+3)+'" font-size="9" fill="#9ca3af" text-anchor="end" font-family="DM Mono,monospace">'+val+(opts.ysuffix||'')+'</text>';
+  }
+  // Etiquetas eje X
+  xlabels.forEach(function(lbl,i){
+    var x=px(i);
+    svg+='<text x="'+x+'" y="'+(H-padB+16)+'" font-size="9" fill="#6b7280" text-anchor="middle" font-family="Inter,sans-serif">'+lbl+'</text>';
+  });
+  // Series (lineas + puntos)
+  series.forEach(function(s){
+    if(s.points.length===0) return;
+    var d='';
+    s.points.forEach(function(p,i){ d+=(i===0?'M':'L')+px(p.x)+' '+py(p.y)+' '; });
+    svg+='<path d="'+d+'" fill="none" stroke="'+s.color+'" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
+    s.points.forEach(function(p){ svg+='<circle cx="'+px(p.x)+'" cy="'+py(p.y)+'" r="3.5" fill="'+s.color+'"/>'; });
+  });
+  svg+='</svg>';
+  // Leyenda
+  var leg='<div class="chart-legend">';
+  series.forEach(function(s){ leg+='<span class="leg-item"><span class="leg-dot" style="background:'+s.color+'"></span>'+s.label+'</span>'; });
+  leg+='</div>';
+  return svg+leg;
+}
+
+// ===== GRAFICO SVG DE BARRAS AGRUPADAS Y ANIMADAS (ejes X/Y) =====
+// series: [{label, color, values:[..]}], xlabels: etiquetas eje X (un grupo por etiqueta)
+function svgBarChart(series, xlabels, opts){
+  opts=opts||{};
+  var W=opts.w||640, H=opts.h||260;
+  var padL=42, padR=16, padT=18, padB=42;
+  var plotW=W-padL-padR, plotH=H-padT-padB;
+  var ymax=opts.ymax;
+  if(!ymax){
+    ymax=0;
+    series.forEach(function(s){ s.values.forEach(function(v){ if(v>ymax) ymax=v; }); });
+    ymax=Math.max(ymax, opts.minYmax||10);
+    var step=opts.step||10;
+    ymax=Math.ceil(ymax/step)*step;
+  }
+  var nGroups=xlabels.length;
+  var nSeries=series.length;
+  var groupW=plotW/Math.max(nGroups,1);
+  var innerPad=groupW*0.18;
+  var barsArea=groupW-innerPad*2;
+  var barW=barsArea/Math.max(nSeries,1);
+  function py(v){ return padT + plotH - (plotH*v/ymax); }
+
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">';
+  // Rejilla horizontal + etiquetas eje Y
+  var lines=opts.ylines||4;
+  for(var g=0; g<=lines; g++){
+    var val=Math.round(ymax*g/lines);
+    var y=py(val);
+    svg+='<line x1="'+padL+'" y1="'+y+'" x2="'+(W-padR)+'" y2="'+y+'" stroke="#e2e6ed" stroke-width="1"/>';
+    svg+='<text x="'+(padL-6)+'" y="'+(y+3)+'" font-size="9" fill="#9ca3af" text-anchor="end" font-family="DM Mono,monospace">'+val+(opts.ysuffix||'')+'</text>';
+  }
+  // Barras por grupo
+  var baseY=py(0);
+  xlabels.forEach(function(lbl,gi){
+    var gx=padL + groupW*gi + innerPad;
+    series.forEach(function(s,si){
+      var v=s.values[gi]||0;
+      var bx=gx + barW*si;
+      var bh=(plotH*v/ymax);
+      var by=py(v);
+      // width del rect real un poco menor para separacion
+      var w=barW*0.86;
+      // animacion: arranca en altura 0 (data-*) y crece via JS
+      svg+='<rect class="hist-bar" x="'+bx.toFixed(1)+'" y="'+baseY+'" width="'+w.toFixed(1)+'" height="0" rx="2" fill="'+s.color+'" '+
+           'data-y="'+by.toFixed(1)+'" data-h="'+bh.toFixed(1)+'"></rect>';
+      // valor encima (opcional)
+      if(opts.showVal!==false && v>0){
+        svg+='<text class="hist-bar-val" x="'+(bx+w/2).toFixed(1)+'" y="'+(by-4).toFixed(1)+'" font-size="8.5" fill="#6b7280" text-anchor="middle" font-family="DM Mono,monospace" opacity="0">'+v+(opts.ysuffix||'')+'</text>';
+      }
+    });
+    // etiqueta eje X centrada en el grupo
+    var cx=padL + groupW*gi + groupW/2;
+    svg+='<text x="'+cx.toFixed(1)+'" y="'+(H-padB+16)+'" font-size="9" fill="#6b7280" text-anchor="middle" font-family="Inter,sans-serif">'+lbl+'</text>';
+  });
+  svg+='</svg>';
+  var leg='<div class="chart-legend">';
+  series.forEach(function(s){ leg+='<span class="leg-item"><span class="leg-dot" style="background:'+s.color+'"></span>'+s.label+'</span>'; });
+  leg+='</div>';
+  return svg+leg;
+}
+
+function renderHistorial(main){
+  var html='';
+  html+='<div class="overview-header" style="flex-direction:column;align-items:stretch;gap:12px">'+
+    '<div style="display:flex;align-items:center;gap:14px">'+
+      '<img src="'+LOGOS.CM+'" style="height:44px;object-fit:contain">'+
+      '<div class="overview-info"><h1>Historial y comparaci&oacute;n</h1><p>Copa Airlines - Comparaci&oacute;n de cierres por d&iacute;a</p></div>'+
+    '</div>'+
+  '</div>';
+
+  // ===== CURVA DE AVANCE POR HORA (del estado actual, ambos turnos) =====
+  var rows=allItemsFlat();
+  // Agrupar cumplimientos por hora real
+  var porHora={};
+  rows.forEach(function(r){
+    if(r.status==='ok'||r.status==='nook'){
+      var m=horaToMin(r.completedAt);
+      if(m!==null){ var hh=Math.floor(m/60); porHora[hh]=(porHora[hh]||0)+1; }
+    }
+  });
+  var horasKeys=Object.keys(porHora).map(Number).sort(function(a,b){return a-b;});
+  html+='<div class="chart-card">'+
+    '<div class="chart-title">Avance de hoy por hora (items cumplidos)</div>';
+  if(horasKeys.length>0){
+    // acumulado
+    var acum=0, pts=[], xlabels=[];
+    horasKeys.forEach(function(hh,i){ acum+=porHora[hh]; pts.push({x:i,y:acum}); xlabels.push(hh+':00'); });
+    html+=svgLineChart([{label:'Items cumplidos (acumulado)', color:'#003087', points:pts}], xlabels, {step:5, minYmax:5, ysuffix:''});
+  } else {
+    html+='<div style="font-size:0.75rem;color:var(--muted);padding:6px 2px">Marca items como OK/NO OK durante el turno para ver la curva de avance por hora.</div>';
+  }
+  html+='</div>';
+
+  // ===== COMPARACION ENTRE DIAS (historial) =====
+  if(historial.length===0){
+    html+='<div class="chart-card"><div class="chart-title">Comparaci&oacute;n de d&iacute;as</div>'+
+      '<div style="font-size:0.75rem;color:var(--muted);padding:6px 2px">A&uacute;n no hay cierres guardados. Cuando un turno llegue al 100%, se guarda autom&aacute;ticamente un cierre del d&iacute;a y aparecer&aacute; aqu&iacute; para comparar.</div>'+
+    '</div>';
+  } else {
+    var xlabels2=historial.map(function(h){ return h.fechaLbl.replace(/\/\d{4}$/,''); }); // dd/mm
+
+    // Grafico 1: Cumplimiento (% OK) dia a dia - global, T6, T8 (BARRAS AGRUPADAS)
+    html+='<div class="chart-card">'+
+      '<div class="chart-title">Cumplimiento (% OK) por d&iacute;a</div>'+
+      svgBarChart([
+        {label:'General', color:'#003087', values:historial.map(function(h){return h.global.pct;})},
+        {label:'T6', color:'#16a34a', values:historial.map(function(h){return h.t6.pct;})},
+        {label:'T8', color:'#d97706', values:historial.map(function(h){return h.t8.pct;})}
+      ], xlabels2, {ymax:100, ylines:4, ysuffix:'%'})+
+    '</div>';
+
+    // Grafico 2: Puntualidad (% a tiempo) dia a dia (BARRAS AGRUPADAS)
+    html+='<div class="chart-card">'+
+      '<div class="chart-title">Puntualidad (% a tiempo) por d&iacute;a</div>'+
+      svgBarChart([
+        {label:'General', color:'#003087', values:historial.map(function(h){return h.global.puntPct;})},
+        {label:'T6', color:'#16a34a', values:historial.map(function(h){return h.t6.puntPct;})},
+        {label:'T8', color:'#d97706', values:historial.map(function(h){return h.t8.puntPct;})}
+      ], xlabels2, {ymax:100, ylines:4, ysuffix:'%'})+
+    '</div>';
+
+    // Grafico 3: Comparacion T6 vs T8 (items OK por dia) (BARRAS AGRUPADAS)
+    html+='<div class="chart-card">'+
+      '<div class="chart-title">Items OK: T6 vs T8 por d&iacute;a</div>'+
+      svgBarChart([
+        {label:'Turno T6', color:'#16a34a', values:historial.map(function(h){return h.t6.ok;})},
+        {label:'Turno T8', color:'#d97706', values:historial.map(function(h){return h.t8.ok;})}
+      ], xlabels2, {step:5, minYmax:10})+
+    '</div>';
+
+    // Tabla resumen del historial
+    html+='<div class="dash-table-wrap"><table class="dash-table"><thead><tr>'+
+      '<th>Fecha</th><th>Hora cierre</th><th>% General</th><th>OK</th><th>NO OK</th><th>% Puntual</th><th></th>'+
+      '</tr></thead><tbody>';
+    historial.slice().reverse().forEach(function(h){
+      html+='<tr>'+
+        '<td>'+h.fechaLbl+'</td>'+
+        '<td>'+h.hora+'</td>'+
+        '<td><b>'+h.global.pct+'%</b></td>'+
+        '<td>'+h.global.ok+'</td>'+
+        '<td>'+h.global.nook+'</td>'+
+        '<td>'+h.global.puntPct+'%</td>'+
+        '<td><button onclick="borrarCierre(\''+h.fecha+'\')" style="background:var(--nook-bg);color:var(--nook);border:1px solid var(--nook-border);border-radius:8px;padding:3px 10px;font-size:0.68rem;font-weight:700;cursor:pointer">Borrar</button></td>'+
+      '</tr>';
+    });
+    html+='</tbody></table></div>';
+
+    html+='<button class="export-btn show" style="margin-top:16px" onclick="exportarHistorial()"> Exportar historial a Excel</button>';
+  }
+
+  html+='<button class="back-btn" onclick="goDashboard()">&larr; Volver al Dashboard</button>';
+  main.innerHTML=html;
+
+  // Animar barras del historial: crecen desde la base hasta su altura real
+  var animarBarras=function(){
+    var bars=main.querySelectorAll('.hist-bar');
+    bars.forEach(function(b){
+      b.setAttribute('y', b.getAttribute('data-y'));
+      b.setAttribute('height', b.getAttribute('data-h'));
+    });
+    var vals=main.querySelectorAll('.hist-bar-val');
+    vals.forEach(function(t){ t.setAttribute('opacity','1'); });
+  };
+  if(typeof requestAnimationFrame!=='undefined'){
+    requestAnimationFrame(function(){ requestAnimationFrame(animarBarras); });
+  } else {
+    setTimeout(animarBarras, 80);
+  }
+}
+
+function borrarCierre(fecha){
+  historial=historial.filter(function(h){ return h.fecha!==fecha; });
+  saveHistorial();
+  render();
+  showToast('Cierre eliminado',false);
+}
+
 function render(){
   renderSidebar();
   var main=document.getElementById('main');
@@ -945,6 +1261,11 @@ function render(){
 
   if(currentView==='dashboard'){
     renderDashboard(main);
+    return;
+  }
+
+  if(currentView==='historial'){
+    renderHistorial(main);
     return;
   }
 
